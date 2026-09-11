@@ -71,21 +71,21 @@ def drying_time(Tinf, Cinf):
 
 print('=== 恒温段 T∞/C∞ 敏感性扫描（问题3 烘干时长，N=200, dt=60s） ===\n')
 
-print('【1】T∞ 扫描（固定 C∞=0.05）：')
-Tinf_vals = [49.76, 49.94, 49.97, 50.0, 50.165, 50.25]
+print('【1】T∞ 扫描（固定 C∞=0.0499）：')
+Tinf_vals = [49.76, 49.94, 49.97, 50.165, 50.25]
 for Tv in Tinf_vals:
-    td = drying_time(Tv, 0.05)
+    td = drying_time(Tv, 0.0499)
     print(f'   T∞={Tv:6.2f}℃  ->  烘干时长 {td:.4f} h')
 
-print('\n【2】C∞ 扫描（固定 T∞=50.0）：')
-Cinf_vals = [0.0489, 0.0495, 0.0499, 0.05, 0.0503]
+print('\n【2】C∞ 扫描（固定 T∞=49.97）：')
+Cinf_vals = [0.0489, 0.0495, 0.0499, 0.0503]
 for Cv in Cinf_vals:
-    td = drying_time(50.0, Cv)
+    td = drying_time(49.97, Cv)
     print(f'   C∞={Cv:.4f} kg/kg  ->  烘干时长 {td:.4f} h')
 
 print('\n【3】关键组合点：')
 key_pts = [('平台均值', 49.97, 0.0499), ('平台中位', 49.94, 0.04989),
-           ('末值(参考仓库)', 50.165, 0.04986), ('我们的取值', 50.0, 0.05)]
+           ('末值(噪声离群点)', 50.165, 0.04986), ('平台均值（本文）', 49.97, 0.0499)]
 for name, Tv, Cv in key_pts:
     td = drying_time(Tv, Cv)
     print(f'   {name:14s} (T∞={Tv}, C∞={Cv})  ->  烘干时长 {td:.4f} h')

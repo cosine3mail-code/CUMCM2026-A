@@ -20,7 +20,7 @@ Q_latent = m_w * L            # 蒸发潜热需求 J/m
 
 cp_mean = 2000.0              # 平均比热（干~湿插值）
 m_tot = m_s * (1 + C0)        # 单位长度总质量 kg/m
-Q_sens = m_tot * cp_mean * 22.0   # 显热(28→50℃) J/m
+Q_sens = m_tot * cp_mean * 21.97   # 显热(28→49.97℃) J/m
 
 print("===== 能量审计（潜热反证） =====")
 print(f"干物质密度 rho_s = {rho_s:.1f} kg/m^3，单位长度干物质 {m_s:.4f} kg/m")
@@ -33,10 +33,10 @@ print("不足以供给蒸发潜热 → 题目模型不含潜热，h 是'等效�
 
 # ===================== 敏感性图 =====================
 # 数据来自 敏感性扫描.py
-Tinf = np.array([49.76, 49.94, 49.97, 50.00, 50.165, 50.25])
-t_T = np.array([58.0111, 57.6796, 57.6246, 57.5697, 57.2690, 57.1149])
-Cinf = np.array([0.0489, 0.0495, 0.0499, 0.0500, 0.0503])
-t_C = np.array([57.5538, 57.5623, 57.5682, 57.5697, 57.5743])
+Tinf = np.array([49.76, 49.94, 49.97, 50.165, 50.25])
+t_T = np.array([58.0096, 57.6781, 57.6231, 57.2675, 57.1134])
+Cinf = np.array([0.0489, 0.0495, 0.0499, 0.0503])
+t_C = np.array([57.6087, 57.6172, 57.6231, 57.6292])
 
 fig, axes = plt.subplots(1, 2, figsize=(11, 4.2))
 ax = axes[0]
@@ -44,13 +44,13 @@ ax.plot(Tinf, t_T, 'o-', lw=1.6, color='#d62728', ms=5)
 ax.axvline(49.97, color='0.5', ls='--', lw=0.8)
 ax.axvline(50.165, color='0.4', ls=':', lw=0.8)
 ax.set_xlabel('恒温段温度 $T_\\infty$ / ℃'); ax.set_ylabel('烘干时长 / h')
-ax.set_title('（一）$T_\\infty$ 敏感性（$C_\\infty$=0.05）')
+ax.set_title('（一）$T_\\infty$ 敏感性（$C_\\infty$=0.0499）')
 ax.grid(alpha=0.3)
 
 ax = axes[1]
 ax.plot(Cinf, t_C, 's-', lw=1.6, color='#1f77b4', ms=5)
 ax.set_xlabel('恒温段水分 $C_\\infty$ / (kg/kg)'); ax.set_ylabel('烘干时长 / h')
-ax.set_title('（二）$C_\\infty$ 敏感性（$T_\\infty$=50℃）')
+ax.set_title('（二）$C_\\infty$ 敏感性（$T_\\infty$=49.97℃）')
 ax.grid(alpha=0.3)
 
 fig.tight_layout()
