@@ -60,8 +60,8 @@ R_pchip = PchipInterpolator(t_rad, R_rad)
 R0 = float(R_rad[0]); R_min = float(R_rad[-1])
 
 
-def T_bc(t): return T_air_i(t) if t <= 14400.0 else 50.0
-def C_bc(t): return C_air_i(t) if t <= 14400.0 else 0.05
+def T_bc(t): return T_air_i(t) if t <= 14400.0 else 49.97   # 平台均值（附件1 末2h平均）
+def C_bc(t): return C_air_i(t) if t <= 14400.0 else 0.0499
 
 def R_of(t):
     if t >= t_rad[-1]:

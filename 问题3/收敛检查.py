@@ -20,8 +20,8 @@ Ta = np.array([r[1] for r in rows], float)
 Ca = np.array([r[2] for r in rows], float)
 Tair = PchipInterpolator(ta, Ta); Cair = PchipInterpolator(ta, Ca)
 
-def Tbc(t): return Tair(t) if t <= 14400.0 else 50.0
-def Cbc(t): return Cair(t) if t <= 14400.0 else 0.05
+def Tbc(t): return Tair(t) if t <= 14400.0 else 49.97
+def Cbc(t): return Cair(t) if t <= 14400.0 else 0.0499
 
 def thomas(a, b, c, d):
     n = len(b)

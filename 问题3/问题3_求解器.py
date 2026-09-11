@@ -52,8 +52,8 @@ t_air, T_air, C_air = read_att1(ATT1)
 T_air_interp = PchipInterpolator(t_air, T_air)
 C_air_interp = PchipInterpolator(t_air, C_air)
 
-def T_bc(t): return T_air_interp(t) if t <= 14400.0 else 50.0
-def C_bc(t): return C_air_interp(t) if t <= 14400.0 else 0.05
+def T_bc(t): return T_air_interp(t) if t <= 14400.0 else 49.97   # 平台均值（附件1 末2h平均）
+def C_bc(t): return C_air_interp(t) if t <= 14400.0 else 0.0499
 
 
 # ===================== Thomas =====================
