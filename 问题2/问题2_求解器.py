@@ -59,10 +59,10 @@ C_air_interp = PchipInterpolator(t_air, C_air)
 
 # ===================== 环境边界（预热段附件1 + 恒温段常数） =====================
 def T_bc(t):
-    return T_air_interp(t) if t <= 14400.0 else 50.0
+    return T_air_interp(t) if t <= 14400.0 else 49.97   # 平台均值（附件1 末2h平均）
 
 def C_bc(t):
-    return C_air_interp(t) if t <= 14400.0 else 0.05
+    return C_air_interp(t) if t <= 14400.0 else 0.0499
 
 
 # ===================== Thomas =====================

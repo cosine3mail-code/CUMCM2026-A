@@ -23,8 +23,8 @@ t_rad, R_rad = read(os.path.join('附件', '附件2.xlsx'), 2)
 R_rad = R_rad / 100.0
 Rp = PchipInterpolator(t_rad, R_rad); R_min = float(R_rad[-1])
 
-def Tbc(t): return Tair(t) if t <= 14400.0 else 50.0
-def Cbc(t): return Cair(t) if t <= 14400.0 else 0.05
+def Tbc(t): return Tair(t) if t <= 14400.0 else 49.97
+def Cbc(t): return Cair(t) if t <= 14400.0 else 0.0499
 def R_of(t): return R_min if t >= t_rad[-1] else float(Rp(t))
 
 def thomas(a, b, c, d):
