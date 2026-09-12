@@ -12,6 +12,23 @@ from scipy.interpolate import PchipInterpolator, interp1d
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+
+
+class MathSciFormatter(ticker.ScalarFormatter):
+    """科学计数法偏移用 Unicode 上标（×10⁻⁶），避免 mathtext 负号缺字。"""
+    def get_offset(self):
+        if len(self._locs) == 0:
+            return ''
+        if self._orderOfMagnitude:
+            _sup = str.maketrans('-0123456789', '⁻⁰¹²³⁴⁵⁶⁷⁸⁹')
+            return '×10' + str(self._orderOfMagnitude).translate(_sup)
+        if self.offset:
+            s = self.format_data(self.offset)
+            if self.offset > 0:
+                s = '+' + s
+            return s
+        return ''
 
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'SimSun', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
@@ -262,7 +279,13 @@ ax.plot(t, dC_s, 'b-', lw=1.2, label='表面')
 ax.plot(t, dC_c, 'g-', lw=1.2, label='中心')
 ax.set_ylabel('ΔC = C(PCHIP) - C(线性) / (kg/kg)'); ax.set_xlabel('时间 $t$ / s')
 ax.set_title('（二）水分浓度差')
+_yfmt = MathSciFormatter()
+_yfmt.set_scientific(True)
+_yfmt.set_powerlimits((0, 0))
+ax.yaxis.set_major_formatter(_yfmt)
 ax.legend(fontsize=8); ax.grid(alpha=0.3)
+# 偏移文本换用 DejaVu Sans（SimHei 无上标负号/数字字形）
+ax.yaxis.get_offset_text().set_fontfamily('DejaVu Sans')
 fig.tight_layout()
 fig.savefig(os.path.join(FIG_DIR, '图4_求解结果差异.pdf'))
 
