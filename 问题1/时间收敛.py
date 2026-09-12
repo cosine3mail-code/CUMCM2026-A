@@ -3,12 +3,17 @@
 import numpy as np
 import openpyxl
 from scipy.interpolate import PchipInterpolator
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(SCRIPT_DIR)
+ATT1 = os.path.join(ROOT, '附件', '附件1.xlsx')
 
 R = 0.02; rho = 820.0; cp = 2600.0; k = 0.36; h = 25.0; hm = 8e-7; D0 = 7e-9; Da = 0.89
 T0 = 28.0; C0 = 2.55; t_end = 1800.0; N = 200; dr = R / N; alpha = k / (rho * cp)
 def Dfun(C): return D0 * np.exp(-Da / C)
 
-wb = openpyxl.load_workbook('附件/附件1.xlsx', data_only=True); ws = wb.active
+wb = openpyxl.load_workbook(ATT1, data_only=True); ws = wb.active
 rows = list(ws.iter_rows(values_only=True))[1:]
 ta = np.array([r[0] for r in rows], float); Ta = np.array([r[1] for r in rows], float); Ca = np.array([r[2] for r in rows], float)
 Tair = PchipInterpolator(ta, Ta); Cair = PchipInterpolator(ta, Ca)

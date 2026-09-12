@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """问题3 能量审计（潜热反证）+ 恒温段敏感性图"""
 import numpy as np
+import os
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'SimSun', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+RESULT_DIR = os.path.join(SCRIPT_DIR, '结果')
 
 # ===================== 能量审计（潜热反证） =====================
 R = 0.02; L = 2.4e6          # 水的汽化潜热 J/kg
@@ -54,5 +58,5 @@ ax.set_title('（二）$C_\\infty$ 敏感性（$T_\\infty$=49.97℃）')
 ax.grid(alpha=0.3)
 
 fig.tight_layout()
-fig.savefig('问题3/结果/恒温段敏感性图.pdf')
+fig.savefig(os.path.join(RESULT_DIR, '恒温段敏感性图.pdf'))
 print("已写出 问题3/结果/恒温段敏感性图.pdf")

@@ -11,6 +11,11 @@ import matplotlib.pyplot as plt
 plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'SimSun', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(SCRIPT_DIR)
+ANALYSIS_DIR = SCRIPT_DIR
+ATT1 = os.path.join(ROOT, '附件', '附件1.xlsx')
+
 R = 0.02; h = 25.0; hm = 8e-7; T0 = 28.0; C0 = 2.55
 
 def rho(C):   return 650.0 + 128.0 * C
@@ -18,7 +23,7 @@ def cp(C):    return 1450.0 + 2736.0 * C / (C + 1.0)
 def kcond(C): return 0.21 + 0.38 * C / (C + 1.0)
 def Dfun(C, TC): return 2.4e-3 * np.exp(-0.45 / C) * np.exp(-3850.0 / (TC + 273.15))
 
-wb = openpyxl.load_workbook(os.path.join('附件', '附件1.xlsx'), data_only=True); ws = wb.active
+wb = openpyxl.load_workbook(ATT1, data_only=True); ws = wb.active
 rows = list(ws.iter_rows(values_only=True))[1:]
 ta = np.array([r[0] for r in rows], float); Ta = np.array([r[1] for r in rows], float); Ca = np.array([r[2] for r in rows], float)
 Tair = PchipInterpolator(ta, Ta); Cair = PchipInterpolator(ta, Ca)
@@ -131,7 +136,7 @@ ax.set_title('(d) 表面水分随时间（快速干燥）')
 ax.legend(fontsize=8); ax.grid(alpha=0.3)
 fig.suptitle('图：问题2 模型检验', fontsize=13)
 fig.tight_layout(rect=[0, 0, 1, 0.96])
-fig.savefig('分析/问题2_模型检验图.pdf')
+fig.savefig(os.path.join(ANALYSIS_DIR, '问题2_模型检验图.pdf'))
 
 # ===================== 问题3 检验图 =====================
 fig, axes = plt.subplots(2, 2, figsize=(11, 8))
@@ -166,6 +171,6 @@ ax.set_title('(d) 恒温段温度敏感性（虚线=平台均值）')
 ax.grid(alpha=0.3)
 fig.suptitle('图：问题3 模型检验', fontsize=13)
 fig.tight_layout(rect=[0, 0, 1, 0.96])
-fig.savefig('分析/问题3_模型检验图.pdf')
+fig.savefig(os.path.join(ANALYSIS_DIR, '问题3_模型检验图.pdf'))
 
 print('已生成 分析/问题2_模型检验图.pdf 与 分析/问题3_模型检验图.pdf')

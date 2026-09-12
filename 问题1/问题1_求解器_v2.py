@@ -6,9 +6,16 @@
 边界：附件1（烘房温度/水分浓度，PCHIP 插值）
 输出：表1/表2（论文表格）+ result1.xlsx（Δt=1s × Δr=0.1cm）
 """
+import os
 import numpy as np
 from scipy.interpolate import PchipInterpolator
 import openpyxl
+
+# ===================== 路径 =====================
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(SCRIPT_DIR)
+RESULT_DIR = os.path.join(SCRIPT_DIR, '结果')
+ATT1 = os.path.join(ROOT, '附件', '附件1.xlsx')
 
 # ===================== 参数（附录2） =====================
 R    = 0.02        # 半径 m
@@ -45,7 +52,7 @@ def read_attachment1(path):
     C = np.array([r[2] for r in rows], dtype=float)
     return t, T, C
 
-t_air, T_air, C_air = read_attachment1('附件/附件1.xlsx')
+t_air, T_air, C_air = read_attachment1(ATT1)
 T_air_interp = PchipInterpolator(t_air, T_air)
 C_air_interp = PchipInterpolator(t_air, C_air)
 
@@ -196,4 +203,4 @@ def write_result1(path, times, r_vals, T_full, C_full):
 
 r_vals_round = [round(float(v) * 100, 1) for v in r_full]   # 0, 0.1, ..., 2.0（cm）
 times_full = list(range(1, n_steps + 1))
-write_result1('result1.xlsx', times_full, r_vals_round, T_full, C_full)
+write_result1(os.path.join(RESULT_DIR, 'result1.xlsx'), times_full, r_vals_round, T_full, C_full)
