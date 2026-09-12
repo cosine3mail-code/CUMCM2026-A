@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""问题2、3 模型检验展示图：收敛性 + 质量守恒 + 径向分布 + 敏感性"""
+"""问题2、3 模型检验展示图（改进版）：对数误差收敛图 + 质量守恒 + 表面C随时间 + 敏感性"""
 import os
 import numpy as np
 import openpyxl
@@ -34,14 +34,13 @@ def thomas(a, b, c, d):
     for i in range(n - 2, -1, -1): x[i] = dp_[i] - cp_[i] * x[i + 1]
     return x
 
-def solve(N, dt, t_end, C_target=None, t_snap=None):
-    """求解并记录：总含水量序列 + 指定时刻的 T/C 剖面"""
+def solve(N, dt, t_end, C_target=None, record=False):
+    """返回 (表面C, 中心C) 或 (烘干时长h,)，可选记录时间序列"""
     dr = R / N; nmax = int(round(t_end / dt))
     T = np.full(N + 1, T0); C = np.full(N + 1, C0)
-    r = np.arange(N + 1) * dr
-    m0 = np.trapezoid(C * r, r)
-    t_hist = [0.0]; m_hist = [1.0]
-    snap = {} if t_snap is None else {t: None for t in t_snap}
+    r = np.arange(N + 1) * dr; m0 = np.trapezoid(C * r, r)
+    t_rec, m_rec, Cs_rec = [], [], []
+    c_prev = C0
     for n in range(nmax):
         tn = (n + 1) * dt
         Tn = T.copy(); Cn = C.copy()
@@ -70,63 +69,65 @@ def solve(N, dt, t_end, C_target=None, t_snap=None):
             if np.max(np.abs(Tn - Tp)) < 1e-6 and np.max(np.abs(Cn - Cp)) < 1e-8:
                 break
         T = Tn; C = Cn
-        t_hist.append(tn); m_hist.append(np.trapezoid(C * r, r) / m0)
-        if snap is not None:
-            for ts in snap:
-                if snap[ts] is None and abs(tn - ts) < dt:
-                    snap[ts] = (T.copy(), C.copy())
+        if record:
+            t_rec.append(tn); m_rec.append(np.trapezoid(C * r, r) / m0); Cs_rec.append(C[N])
         if C_target is not None and C[0] < C_target:
-            break
-    return np.array(t_hist), np.array(m_hist), r, snap
+            td = (n + (C_target - c_prev) / (C[0] - c_prev)) * dt / 3600.0
+            if record:
+                return td, np.array(t_rec), np.array(m_rec), np.array(Cs_rec)
+            return td
+        c_prev = C[0]
+    if record:
+        return (C[N], C[0]), np.array(t_rec), np.array(m_rec), np.array(Cs_rec)
+    return (C[N], C[0])
 
-# ===================== 问题2 =====================
-t2, m2, r2, s2 = solve(200, 1.0, 10800.0, t_snap=[1800.0, 5400.0, 10800.0])
+# ===================== 收敛数据 =====================
+N2 = [50, 100, 200, 400]
+Cs2 = [solve(N, 1.0, 10800.0)[0] for N in N2]
+dt2 = [2.0, 1.0, 0.5, 0.25]
+Csd2 = [solve(200, d, 10800.0)[0] for d in dt2]
+N3 = [50, 100, 200, 400]
+td3 = [solve(N, 60.0, 500000.0, C_target=0.15) for N in N3]
+dt3 = [120.0, 60.0, 30.0, 15.0]
+tdd3 = [solve(200, d, 500000.0, C_target=0.15) for d in dt3]
 
-# ===================== 问题3 =====================
-t3, m3, r3, s3 = solve(200, 60.0, 500000.0, C_target=0.15, t_snap=[21600.0, 86400.0, 172800.0, 207000.0])
+err_Cs2 = [abs(c - Cs2[-1]) for c in Cs2[:-1]]
+err_Csd2 = [abs(c - Csd2[-1]) for c in Csd2[:-1]]
+err_td3 = [abs(t - td3[-1]) for t in td3[:-1]]
+err_tdd3 = [abs(t - tdd3[-1]) for t in tdd3[:-1]]
+
+# 质量守恒 + 表面C随时间（问题2）
+(_, _), t2, m2, Cs2t = solve(200, 1.0, 10800.0, record=True)
+# 质量守恒（问题3）
+td3_full, t3, m3, _ = solve(200, 60.0, 500000.0, C_target=0.15, record=True)
 
 # ===================== 问题2 检验图 =====================
 fig, axes = plt.subplots(2, 2, figsize=(11, 8))
-# (a) 网格收敛
+# (a) 网格收敛误差
 ax = axes[0, 0]
-N = [100, 200, 400]
-Cs = [1.008121, 1.008130, 1.008133]
-Cc = [1.766194, 1.766195, 1.766195]
-ax.plot(N, Cs, 'o-', color='#d62728', label='表面 C')
-ax.set_xlabel('网格数 N'); ax.set_ylabel('表面水分 C / (kg/kg)')
-ax.set_title('(a) 网格收敛（3h 表面水分）')
-ax.grid(alpha=0.3)
-ax2 = ax.twinx()
-ax2.plot(N, Cc, 's--', color='#1f77b4', label='中心 C')
-ax2.set_ylabel('中心水分 C / (kg/kg)')
-ax2.ticklabel_format(useOffset=False)
-# (b) 时间收敛
+ax.loglog(N2[:-1], err_Cs2, 'o-', color='#d62728', label='数值误差')
+ax.loglog(N2[:-1], [err_Cs2[0] * (N2[0] / n) ** 2 for n in N2[:-1]], '--', color='0.5', label='二阶参考')
+ax.set_xlabel('网格数 N'); ax.set_ylabel('表面 C 误差 / (kg/kg)')
+ax.set_title('(a) 网格收敛（相对 N=400，二阶）')
+ax.legend(fontsize=8); ax.grid(alpha=0.3, which='both')
+# (b) 时间收敛误差
 ax = axes[0, 1]
-dt = [1.0, 0.5, 0.25]
-Csc = [1.008130, 1.008124, 1.008121]
-Ccc = [1.766195, 1.766184, 1.766179]
-ax.plot(dt, Csc, 'o-', color='#d62728', label='表面 C')
-ax.set_xlabel('时间步 dt / s'); ax.set_ylabel('表面水分 C / (kg/kg)')
-ax.set_title('(b) 时间收敛（3h 表面水分）')
-ax.grid(alpha=0.3)
-ax2 = ax.twinx()
-ax2.plot(dt, Ccc, 's--', color='#1f77b4', label='中心 C')
-ax2.set_ylabel('中心水分 C / (kg/kg)')
-ax2.ticklabel_format(useOffset=False)
+ax.loglog(dt2[:-1], err_Csd2, 'o-', color='#d62728', label='数值误差')
+ax.loglog(dt2[:-1], [err_Csd2[0] * (dt2[0] / d) for d in dt2[:-1]], '--', color='0.5', label='一阶参考')
+ax.set_xlabel('时间步 dt / s'); ax.set_ylabel('表面 C 误差 / (kg/kg)')
+ax.set_title('(b) 时间收敛（相对 dt=0.25，一阶）')
+ax.legend(fontsize=8); ax.grid(alpha=0.3, which='both')
 # (c) 质量守恒
 ax = axes[1, 0]
 ax.plot(t2 / 3600.0, m2, 'b-', lw=1.6)
 ax.set_xlabel('时间 / h'); ax.set_ylabel('总含水量比（末/初）')
 ax.set_title('(c) 质量守恒（总含水量单调下降）')
 ax.grid(alpha=0.3)
-# (d) 径向分布
+# (d) 表面/中心 C 随时间
 ax = axes[1, 1]
-r_cm = r2 * 100
-for ts, lab in [(1800.0, '0.5 h'), (5400.0, '1.5 h'), (10800.0, '3 h')]:
-    T, C = s2[ts]
-    ax.plot(r_cm, C, label=lab)
-ax.set_xlabel('到中心距离 r / cm'); ax.set_ylabel('水分浓度 C / (kg/kg)')
-ax.set_title('(d) 径向水分分布（外干内湿）')
+ax.plot(t2 / 3600.0, Cs2t, 'r-', lw=1.5, label='表面 C')
+ax.set_xlabel('时间 / h'); ax.set_ylabel('水分浓度 C / (kg/kg)')
+ax.set_title('(d) 表面水分随时间（快速干燥）')
 ax.legend(fontsize=8); ax.grid(alpha=0.3)
 fig.suptitle('图：问题2 模型检验', fontsize=13)
 fig.tight_layout(rect=[0, 0, 1, 0.96])
@@ -134,22 +135,20 @@ fig.savefig('分析/问题2_模型检验图.pdf')
 
 # ===================== 问题3 检验图 =====================
 fig, axes = plt.subplots(2, 2, figsize=(11, 8))
-# (a) 网格收敛
+# (a) 网格收敛误差
 ax = axes[0, 0]
-N = [100, 200, 400]
-td = [57.7060, 57.6231, 57.5923]
-ax.plot(N, td, 'o-', color='#d62728')
-ax.set_xlabel('网格数 N'); ax.set_ylabel('烘干时长 / h')
-ax.set_title('(a) 网格收敛')
-ax.grid(alpha=0.3)
-# (b) 时间收敛
+ax.loglog(N3[:-1], err_td3, 'o-', color='#d62728', label='数值误差')
+ax.loglog(N3[:-1], [err_td3[0] * (N3[0] / n) ** 2 for n in N3[:-1]], '--', color='0.5', label='二阶参考')
+ax.set_xlabel('网格数 N'); ax.set_ylabel('烘干时长误差 / h')
+ax.set_title('(a) 网格收敛（相对 N=400，二阶）')
+ax.legend(fontsize=8); ax.grid(alpha=0.3, which='both')
+# (b) 时间收敛误差
 ax = axes[0, 1]
-dt = [60.0, 30.0, 15.0]
-td = [57.6231, 57.5970, 57.5839]
-ax.plot(dt, td, 'o-', color='#d62728')
-ax.set_xlabel('时间步 dt / s'); ax.set_ylabel('烘干时长 / h')
-ax.set_title('(b) 时间收敛')
-ax.grid(alpha=0.3)
+ax.loglog(dt3[:-1], err_tdd3, 'o-', color='#d62728', label='数值误差')
+ax.loglog(dt3[:-1], [err_tdd3[0] * (dt3[0] / d) for d in dt3[:-1]], '--', color='0.5', label='一阶参考')
+ax.set_xlabel('时间步 dt / s'); ax.set_ylabel('烘干时长误差 / h')
+ax.set_title('(b) 时间收敛（相对 dt=15，一阶）')
+ax.legend(fontsize=8); ax.grid(alpha=0.3, which='both')
 # (c) 质量守恒
 ax = axes[1, 0]
 ax.plot(t3 / 3600.0, m3, 'b-', lw=1.4)
@@ -163,7 +162,7 @@ tdT = [58.0096, 57.6781, 57.6231, 57.2675, 57.1134]
 ax.plot(Tinf, tdT, 'o-', color='#d62728')
 ax.axvline(49.97, color='0.5', ls='--', lw=0.9)
 ax.set_xlabel('恒温段温度 $T_\\infty$ / ℃'); ax.set_ylabel('烘干时长 / h')
-ax.set_title('(d) 恒温段温度敏感性（虚线=平台均值 49.97℃）')
+ax.set_title('(d) 恒温段温度敏感性（虚线=平台均值）')
 ax.grid(alpha=0.3)
 fig.suptitle('图：问题3 模型检验', fontsize=13)
 fig.tight_layout(rect=[0, 0, 1, 0.96])

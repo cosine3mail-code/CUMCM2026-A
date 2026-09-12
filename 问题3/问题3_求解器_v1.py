@@ -31,6 +31,7 @@ dt   = 60.0               # 时间步长 s（与 result3 输出间隔一致）
 C_target = 0.15           # 烘干判据
 t_max = 500000.0          # 求解上限 ~5.8 天（提前达标则 break）
 n_max = int(t_max / dt)
+drying_bisection_steps = 16  # 首次跨越阈值后的固定二分次数
 
 
 def rho(C):   return 650.0 + 128.0 * C
@@ -72,26 +73,26 @@ def thomas(a, b, c, d):
 
 
 # ===================== 求解器（复用问题2 的耦合 Picard） =====================
-def solve_heat(rhocp, k_face, T_old, tn):
+def solve_heat(rhocp, k_face, T_old, tn, dt_step):
     aT = np.zeros(N + 1); bT = np.zeros(N + 1); cT = np.zeros(N + 1); dT = np.zeros(N + 1)
-    lam0 = k_face[0] * dt / (rhocp[0] * dr**2)
+    lam0 = k_face[0] * dt_step / (rhocp[0] * dr**2)
     bT[0] = 1 + 4 * lam0; cT[0] = -4 * lam0; dT[0] = T_old[0]
     for i in range(1, N):
-        lamL = k_face[i - 1] * dt / (rhocp[i] * dr**2)
-        lamR = k_face[i] * dt / (rhocp[i] * dr**2)
+        lamL = k_face[i - 1] * dt_step / (rhocp[i] * dr**2)
+        lamR = k_face[i] * dt_step / (rhocp[i] * dr**2)
         aT[i] = -(i - 0.5) / i * lamL
         cT[i] = -(i + 0.5) / i * lamR
         bT[i] = 1 + (i - 0.5) / i * lamL + (i + 0.5) / i * lamR
         dT[i] = T_old[i]
-    Ah = 2 * N * h * dt / ((N - 0.25) * rhocp[N] * dr)
-    lamN = k_face[N - 1] * dt / (rhocp[N] * dr**2)
+    Ah = 2 * N * h * dt_step / ((N - 0.25) * rhocp[N] * dr)
+    lamN = k_face[N - 1] * dt_step / (rhocp[N] * dr**2)
     Bh = 2 * (N - 0.5) * lamN / (N - 0.25)
     aT[N] = -Bh; bT[N] = 1 + Ah + Bh; dT[N] = T_old[N] + Ah * T_bc(tn)
     return thomas(aT, bT, cT, dT)
 
 
-def solve_mass(D_face, C_old, tn):
-    lam = D_face * dt / dr**2
+def solve_mass(D_face, C_old, tn, dt_step):
+    lam = D_face * dt_step / dr**2
     aC = np.zeros(N + 1); bC = np.zeros(N + 1); cC = np.zeros(N + 1); dC = np.zeros(N + 1)
     bC[0] = 1 + 4 * lam[0]; cC[0] = -4 * lam[0]; dC[0] = C_old[0]
     for i in range(1, N):
@@ -99,10 +100,46 @@ def solve_mass(D_face, C_old, tn):
         cC[i] = -(i + 0.5) / i * lam[i]
         bC[i] = 1 + (i - 0.5) / i * lam[i - 1] + (i + 0.5) / i * lam[i]
         dC[i] = C_old[i]
-    Am = 2 * N * hm * dt / ((N - 0.25) * dr)
+    Am = 2 * N * hm * dt_step / ((N - 0.25) * dr)
     Bm = 2 * (N - 0.5) * lam[N - 1] / (N - 0.25)
     aC[N] = -Bm; bC[N] = 1 + Am + Bm; dC[N] = C_old[N] + Am * C_bc(tn)
     return thomas(aC, bC, cC, dC)
+
+
+def advance_one_step(T_old, C_old, tn, dt_step):
+    """从指定状态推进一个任意长度的时间步，用于阈值时间二分。"""
+    T_new = T_old.copy(); C_new = C_old.copy()
+    for it in range(50):
+        Tp = T_new.copy(); Cp = C_new.copy()
+        rhocp = rho(Cp) * cp(Cp)
+        k_face = kcond(0.5 * (Cp[:-1] + Cp[1:]))
+        T_new = solve_heat(rhocp, k_face, T_old, tn, dt_step)
+        Cf = 0.5 * (Cp[:-1] + Cp[1:])
+        Tf = 0.5 * (T_new[:-1] + T_new[1:])
+        D_face = Dfun(Cf, Tf)
+        C_new = solve_mass(D_face, C_old, tn, dt_step)
+        if np.max(np.abs(T_new - Tp)) < 1e-6 and np.max(np.abs(C_new - Cp)) < 1e-8:
+            break
+    return T_new, C_new, it + 1
+
+
+def bisect_drying_time(T_before, C_before, t_before, T_after, C_after, t_after):
+    """从首次达标前的场开始固定二分 16 次。"""
+    t_low, T_low, C_low = t_before, T_before.copy(), C_before.copy()
+    t_high, T_high, C_high = t_after, T_after.copy(), C_after.copy()
+    if C_low[0] < C_target or C_high[0] >= C_target:
+        raise ValueError("二分端点未包围 C(r=0)=0.15。")
+
+    iterations = 0
+    while iterations < drying_bisection_steps:
+        t_mid = 0.5 * (t_low + t_high)
+        T_mid, C_mid, _ = advance_one_step(T_low, C_low, t_mid, t_mid - t_low)
+        if C_mid[0] < C_target:
+            t_high, T_high, C_high = t_mid, T_mid, C_mid
+        else:
+            t_low, T_low, C_low = t_mid, T_mid, C_mid
+        iterations += 1
+    return t_high, iterations
 
 
 # ===================== 时间推进 =====================
@@ -119,16 +156,17 @@ t_dry = None
 iter_hist = []
 for n in range(n_max):
     tn = (n + 1) * dt
+    T_before = T.copy(); C_before = C.copy()
     T_new = T.copy(); C_new = C.copy()
     for it in range(50):
         Tp = T_new.copy(); Cp = C_new.copy()
         rhocp = rho(Cp) * cp(Cp)
         k_face = kcond(0.5 * (Cp[:-1] + Cp[1:]))
-        T_new = solve_heat(rhocp, k_face, T, tn)
+        T_new = solve_heat(rhocp, k_face, T, tn, dt)
         Cf = 0.5 * (Cp[:-1] + Cp[1:])
         Tf = 0.5 * (T_new[:-1] + T_new[1:])
         D_face = Dfun(Cf, Tf)
-        C_new = solve_mass(D_face, C, tn)
+        C_new = solve_mass(D_face, C, tn, dt)
         if np.max(np.abs(T_new - Tp)) < 1e-6 and np.max(np.abs(C_new - Cp)) < 1e-8:
             break
     T = T_new; C = C_new
@@ -137,9 +175,10 @@ for n in range(n_max):
     n_done = n + 1
     # 烘干判据：中心水分 < 0.15（首次满足）
     if C[0] < C_target:
-        # 线性插值精确定位跨越时刻
-        C_prev = C_full[n - 1, 0] if n > 0 else C0
-        t_dry = (n + (C_target - C_prev) / (C[0] - C_prev)) * dt if n > 0 else dt
+        # 从首次达标前一个时间层开始，二分时间步长定位跨越时刻。
+        t_dry, drying_bisection_iterations = bisect_drying_time(
+            T_before, C_before, tn - dt, T_new, C_new, tn
+        )
         break
 
 if t_dry is None:
