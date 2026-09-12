@@ -193,27 +193,54 @@ $$\frac{\partial C}{\partial t}=\frac{1}{\xi R^2}\frac{\partial}{\partial\xi}\le
 
 ## 6. 参考文献
 
-> 按「切实有用」原则推荐，按用途分组。
+> 格式统一为 GB/T 7714（中文）/ 通用学术格式（英文），英文作者名用大写；按用途分组，供论文按实际引用选择。文末附「引用位置建议」。
 
 **（1）解析解 / 模型验证**
 
-- Crank, J. *The Mathematics of Diffusion*. 2nd ed. Oxford: Oxford University Press, 1975. —— 扩散方程经典，含圆柱几何分离变量（贝塞尔函数）级数解，可用于问题1 定常/简化情形的数值解**交叉验证**。
+[1] CRANK J. The Mathematics of Diffusion[M]. 2nd ed. Oxford: Oxford University Press, 1975.
+—— 扩散方程经典，含无限长圆柱分离变量（贝塞尔级数）解析解，用于问题1/问题2 数值解的解析解交叉验证。
 
-**（2）传热传质与边界条件（权威教材）**
+**（2）传热传质与边界条件**
 
-- 杨世铭, 陶文铨. 《传热学》. 第5版. 北京: 高等教育出版社, 2019. —— 圆柱坐标系导热方程、第三类（对流）边界条件、Biot 数判据与集总参数法的适用性。
-- Incropera, F. P., DeWitt, D. P., Bergman, T. L., Lavine, A. S. *Fundamentals of Heat and Mass Transfer*. 7th ed. Hoboken: Wiley, 2011. —— 一维瞬态导热（含无限长圆柱）与对流传质边界条件的标准处理。
-- Bird, R. B., Stewart, W. E., Lightfoot, E. N. *Transport Phenomena*. 2nd ed. New York: Wiley, 2007. —— Fick 扩散、柱坐标下的通量与守恒方程。
+[2] 杨世铭, 陶文铨. 传热学[M]. 第5版. 北京: 高等教育出版社, 2019.
+—— 圆柱坐标系导热方程、第三类（对流）边界条件、Biot 数判据。
 
-**（3）干燥/多孔介质耦合理论**
+[3] INCROPERA F P, DEWITT D P, BERGMAN T L, et al. Fundamentals of Heat and Mass Transfer[M]. 7th ed. Hoboken: Wiley, 2011.
+—— 一维瞬态导热（含无限长圆柱）与对流传质边界条件的标准处理。
 
-- Luikov, A. V. *Heat and Mass Transfer in Capillary-Porous Bodies*. Oxford: Pergamon Press, 1966. —— 多孔介质耦合传热传质（Luikov 模型）的经典理论框架，是本类「温度—水分耦合干燥」问题的源头文献。
-- Dincer, I., Hussain, M. M. Development of a new Biot number and lag factor correlation for drying applications. *International Journal of Heat and Mass Transfer*, 2004, 47(4): 653–661. —— 圆柱干燥的 Biot 数—滞后因子解析解，与本题圆柱几何高度契合。
-- Ertekin, C., Firat, M. Z. A comprehensive review of thin-layer drying models used in agricultural products. *Critical Reviews in Food Science and Nutrition*, 2017, 57(4): 701–717. —— 农产品/药材薄层干燥模型综述，提供经验参数与模型选型参考。
+[4] BIRD R B, STEWART W E, LIGHTFOOT E N. Transport Phenomena[M]. 2nd ed. New York: Wiley, 2002.
+—— Fick 扩散、柱坐标下的守恒方程与通量表达式。
 
-**（4）数值方法**
+**（3）干燥 / 多孔介质耦合理论**
 
-- 陶文铨. 《数值传热学》. 第2版. 西安: 西安交通大学出版社, 2001. —— 有限差分/有限体积法解导热—对流方程，隐式格式、第三类边界离散、非线性迭代的处理，直接对应本文第4节的实现。
+[5] LUIKOV A V. Heat and Mass Transfer in Capillary-Porous Bodies[M]. Oxford: Pergamon Press, 1966.
+—— 多孔介质耦合传热传质（Luikov 模型）经典理论，本类「温度—水分耦合干燥」问题的源头文献。
+
+[6] DINCER I, HUSSAIN M M. Development of a new Biot number and lag factor correlation for drying applications[J]. International Journal of Heat and Mass Transfer, 2004, 47(4): 653-661.
+—— 圆柱干燥的 Biot 数—滞后因子解析解，与本题圆柱几何契合。
+
+[7] ERTEKIN C, FIRAT M Z. A comprehensive review of thin-layer drying models used in agricultural products[J]. Critical Reviews in Food Science and Nutrition, 2017, 57(4): 701-717.
+—— 农产品/药材薄层干燥模型综述。
+
+**（4）收缩（问题4）**
+
+[8] KATEKAWA M E, SILVA M A. A review of drying models including shrinkage effects[J]. Drying Technology, 2006, 24(1): 5-20.
+—— 含收缩效应的干燥模型综述，支撑问题4 收缩（仿射/非均匀）建模假设。
+
+**（5）数值方法**
+
+[9] 陶文铨. 数值传热学[M]. 第2版. 西安: 西安交通大学出版社, 2001.
+—— 有限差分/有限体积法解导热—对流方程，隐式格式、第三类边界离散、非线性迭代，对应本文数值求解部分。
+
+### 引用位置建议（供写论文时参考）
+
+| 论文位置 | 建议引用 |
+|---|---|
+| 问题1/2 模型（导热 + 扩散方程） | [2][3][4] |
+| 干燥耦合理论（问题2/3） | [5][7] |
+| 解析解验证（Bessel 级数） | [1][6] |
+| 收缩建模（问题4） | [8] |
+| 数值方法（有限体积、隐式、迭代） | [9] |
 
 ---
 
