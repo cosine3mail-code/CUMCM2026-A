@@ -1,9 +1,32 @@
-# Python 虚拟环境与缓存
+# Python 虚拟环境、缓存与测试产物
 .venv/
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
 
-# 系统/编辑器
+# 本地配置与编辑器文件
+.env
+.env.*
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统文件
 .DS_Store
 Thumbs.db
+
+# Excel、Office 和其他临时文件
+~$*.xls
+~$*.xlsx
+~$*.xlsm
+*.tmp
+*.temp
+*.log
